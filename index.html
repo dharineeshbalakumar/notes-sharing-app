@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NoteShare: share and find study notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#eef2f7;--grid:rgba(60,90,140,.09);--sheet:#fff;--ink:#16213a;--mut:#56627f;--line:#cbd5e4;--hl:#ffe66b;--margin:rgba(229,72,77,.45);--tagS:75%;--tagL:85%;--danger:#c4283f;color-scheme:light}
+[data-theme=dark]{--paper:#0f1424;--grid:rgba(150,180,255,.06);--sheet:#182036;--ink:#e9edfb;--mut:#9ba6c7;--line:#2c3757;--hl:#ffe66b;--margin:rgba(255,120,125,.4);--tagS:35%;--tagL:30%;--danger:#ff7a8c;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:16px}
+body{margin:0;font:16px/1.55 "IBM Plex Sans",system-ui,sans-serif;color:var(--ink);background:var(--paper);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:28px 28px}
+h1,h2,h3,.brand{font-family:"Bricolage Grotesque",system-ui,sans-serif;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.wrap{max-width:1100px;margin:0 auto;padding:0 20px}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding:16px 0}
+.brand{font-size:24px;font-weight:800;letter-spacing:-.02em}
+.search{flex:1 1 260px;display:flex}
+.search input{width:100%;padding:10px 14px;border:1px solid var(--ink);border-radius:4px;background:var(--sheet)}
+.ghost{background:none;border:1px solid var(--line);border-radius:4px;padding:8px 12px;cursor:pointer}
+.ghost:hover{border-color:var(--ink)}
+.hero{padding:28px 0 20px}
+.hero h1{font-size:clamp(30px,5.5vw,52px);font-weight:800;letter-spacing:-.03em;line-height:1.05;max-width:16ch}
+.hero p{max-width:52ch;color:var(--mut);margin:12px 0 20px}
+.btn{background:var(--hl);color:#16213a;border:2px solid #16213a;border-radius:4px;padding:10px 18px;font-weight:600;cursor:pointer;box-shadow:3px 3px 0 #16213a}
+[data-theme=dark] .btn{border-color:#ffe66b;box-shadow:3px 3px 0 #ffe66b}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #16213a}
+.bar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:14px}
+.tabs,.chips{display:flex;flex-wrap:wrap;gap:6px}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:6px 4px;margin-right:12px;cursor:pointer;font-weight:600;color:var(--mut)}
+.tabs button[aria-pressed=true]{color:var(--ink);border-color:var(--ink)}
+.bar select{padding:7px 10px;border:1px solid var(--line);border-radius:4px;background:var(--sheet)}
+.chips{margin:14px 0 4px}
+.chip{border:1px solid var(--line);background:var(--sheet);border-radius:999px;padding:4px 14px;cursor:pointer;font-size:14px}
+.chip[aria-pressed=true]{background:var(--hl);color:#16213a;border-color:#16213a;font-weight:600}
+.count{color:var(--mut);font-size:14px;margin:10px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px;padding-bottom:30px}
+.sheet{position:relative;background:var(--sheet);background-image:linear-gradient(to right,transparent 30px,var(--margin) 30px,var(--margin) 31px,transparent 31px);border:1px solid var(--line);border-radius:3px;padding:16px 16px 12px 44px;cursor:pointer;display:flex;flex-direction:column;gap:6px}
+.sheet:hover{border-color:var(--ink)}
+.tag{align-self:flex-start;font-size:13px;font-weight:600;padding:2px 10px;border-radius:3px;background:hsl(var(--h) var(--tagS) var(--tagL));color:var(--ink)}
+.sheet h3{font-size:20px;line-height:1.2;letter-spacing:-.01em}
+.desc{margin:0;color:var(--mut);font-size:15px;flex:1}
+.by{font-size:13px;color:var(--mut)}
+.acts{display:flex;gap:8px;margin-top:6px}
+.acts button,.dfoot button{border:1px solid var(--line);background:var(--sheet);border-radius:4px;padding:4px 12px;cursor:pointer;font-size:14px}
+.acts button:hover,.dfoot button:hover{border-color:var(--ink)}
+.acts button.on,.dfoot button.on{background:var(--hl);color:#16213a;border-color:#16213a}
+.empty{grid-column:1/-1;border:2px dashed var(--line);border-radius:4px;padding:36px 20px;text-align:center;color:var(--mut);background:var(--sheet)}
+footer{border-top:1px solid var(--line);padding:18px 0 40px;display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;color:var(--mut);font-size:14px}
+footer span{flex:1 1 260px}
+dialog{border:2px solid var(--ink);border-radius:4px;background:var(--sheet);color:var(--ink);padding:0;width:min(680px,94vw);max-height:90vh}
+dialog::backdrop{background:rgba(10,15,35,.6)}
+.dhead{padding:18px 22px 8px}
+.dhead h2{font-size:26px;letter-spacing:-.02em;line-height:1.15}
+.dhead .by{margin-top:6px}
+.dbody{padding:8px 22px 14px;overflow:auto;max-height:55vh}
+.body{white-space:pre-wrap;font-size:16px;line-height:1.7}
+.dfoot{display:flex;flex-wrap:wrap;gap:8px;padding:12px 22px 18px;border-top:1px solid var(--line)}
+.dfoot .sp{flex:1}
+.dfoot .del{color:var(--danger);border-color:var(--danger)}
+label{display:block;font-weight:600;font-size:14px;margin:12px 0 4px}
+.f input,.f textarea{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:4px;background:var(--paper)}
+.f textarea{min-height:170px;resize:vertical}
+.err{color:var(--danger);font-size:14px;min-height:20px;margin:8px 0 0}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--sheet);padding:10px 18px;border-radius:4px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:99}
+#toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">NoteShare</div>
+    <div class="search"><input id="q" type="search" placeholder="Search by title, subject or author" aria-label="Search notes"></div>
+    <button class="ghost" id="theme" type="button">Dark mode</button>
+  </header>
+
+  <section class="hero">
+    <h1>Notes from students, for students.</h1>
+    <p>Share your class notes, find what you need before exams, and save the ones worth keeping.</p>
+    <button class="btn" id="add" type="button">Share a note</button>
+  </section>
+
+  <div class="bar">
+    <div class="tabs" role="group" aria-label="View">
+      <button type="button" data-tab="all" aria-pressed="true">All notes</button>
+      <button type="button" data-tab="saved" aria-pressed="false">Saved</button>
+      <button type="button" data-tab="mine" aria-pressed="false">My notes</button>
+    </div>
+    <select id="sort" aria-label="Sort notes">
+      <option value="new">Newest first</option>
+      <option value="top">Most liked</option>
+    </select>
+  </div>
+  <div class="chips" id="chips" role="group" aria-label="Subjects"></div>
+  <div class="count" id="count" aria-live="polite"></div>
+  <main class="grid" id="grid"></main>
+
+  <footer>
+    <span>Notes are stored in this browser. Export them to share with friends, or import notes you received.</span>
+    <button class="ghost" id="export" type="button">Export notes</button>
+    <button class="ghost" id="import" type="button">Import notes</button>
+    <input type="file" id="file" accept=".json,application/json" hidden>
+  </footer>
+</div>
+
+<dialog id="viewD" aria-labelledby="vt"></dialog>
+
+<dialog id="addD" aria-labelledby="at">
+  <div class="dhead"><h2 id="at">Share a note</h2></div>
+  <div class="dbody f">
+    <label for="fTitle">Title</label>
+    <input id="fTitle" maxlength="90" placeholder="Example: Normalisation, 1NF to 3NF">
+    <label for="fSubject">Subject</label>
+    <input id="fSubject" maxlength="40" list="subjList" placeholder="Example: DBMS">
+    <datalist id="subjList"></datalist>
+    <label for="fAuthor">Your name</label>
+    <input id="fAuthor" maxlength="40" placeholder="Shown on your note">
+    <label for="fDesc">One-line summary (optional)</label>
+    <input id="fDesc" maxlength="140" placeholder="What will readers learn?">
+    <label for="fBody">Notes</label>
+    <textarea id="fBody" maxlength="8000" placeholder="Type or paste your notes here"></textarea>
+    <label for="fLink">Link to a PDF or slides (optional)</label>
+    <input id="fLink" type="url" maxlength="300" placeholder="https://">
+    <p class="err" id="err" role="alert"></p>
+  </div>
+  <div class="dfoot">
+    <button class="btn" id="post" type="button">Publish note</button>
+    <button type="button" id="cancel">Cancel</button>
+  </div>
+</dialog>
+
+<div id="toast" role="status"></div>
+
+<script>
+(function () {
+  'use strict';
+  var K = 'noteshare.notes.v1', TK = 'noteshare.theme', UK = 'noteshare.author';
+  var $ = function (s) { return document.querySelector(s); };
+  var S = { q: '', subject: 'All', tab: 'all', sort: 'new' };
+  var notes = [];
+
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } }
+  };
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function hue(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360; return h; }
+  function fmt(d) { return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }); }
+  function toast(m) {
+    var t = $('#toast'); t.textContent = m; t.classList.add('show');
+    clearTimeout(toast.t); toast.t = setTimeout(function () { t.classList.remove('show'); }, 2400);
+  }
+  function safeLink(u) { return /^https?:\/\//i.test(u || '') ? u : ''; }
+
+  function seed() {
+    function mk(id, title, subject, author, date, likes, desc, body) {
+      return { id: id, title: title, subject: subject, author: author, date: date, likes: likes, desc: desc, body: body, link: '', liked: false, saved: false, mine: false };
+    }
+    return [
+      mk('s1', 'Bias vs variance in plain words', 'Machine Learning', 'Priya S', '2026-11-12', 14,
+        'Why models underfit or overfit, with a quick checklist.',
+        'Bias is error from a model that is too simple. It misses the pattern (underfitting).\nVariance is error from a model that is too sensitive to the training data. It memorises noise (overfitting).\n\nQuick signs\n- High training error and high test error: high bias.\n- Low training error but high test error: high variance.\n\nWhat to try\n- High bias: use a richer model, add features, train longer.\n- High variance: get more data, add regularisation, simplify the model, use cross-validation.\n\nThe goal is the sweet spot where test error is lowest.'),
+      mk('s2', 'Gradient descent in five minutes', 'Machine Learning', 'Arun K', '2026-11-09', 22,
+        'The update rule, the learning rate, and the three common variants.',
+        'Goal: find the parameters that make the loss small.\n\nSteps\n1. Start with random weights.\n2. Compute the gradient of the loss.\n3. Move the weights a small step against the gradient: w = w - lr * gradient.\n4. Repeat until the loss stops improving.\n\nLearning rate (lr)\n- Too big: the loss bounces or explodes.\n- Too small: training is very slow.\n\nVariants: batch (all data), stochastic (one sample), mini-batch (a small group, the most common).'),
+      mk('s3', 'Big-O cheat sheet', 'Data Structures', 'Meena R', '2026-11-05', 31,
+        'Growth rates from fastest to slowest, with an example for each.',
+        'Common growth rates, fastest to slowest\nO(1) constant: array index lookup\nO(log n): binary search\nO(n): linear scan\nO(n log n): merge sort, heap sort\nO(n^2): bubble sort, nested loops\nO(2^n): naive recursive subsets\n\nTip: drop constants and smaller terms. 3n^2 + 5n + 2 is O(n^2).'),
+      mk('s4', 'Normalisation: 1NF to 3NF', 'DBMS', 'Karthik V', '2026-10-28', 18,
+        'Three normal forms with one worked example.',
+        '1NF: every cell holds one value. No repeating groups.\n2NF: in 1NF, and every non-key column depends on the whole primary key (no partial dependency).\n3NF: in 2NF, and non-key columns depend only on the key (no transitive dependency).\n\nExample: Student(id, name, dept, dept_head). dept_head depends on dept, not on id. Move it to a Department table.')
+    ];
+  }
+  function load() {
+    var n = null;
+    try { n = JSON.parse(store.get(K)); } catch (e) { n = null; }
+    if (Array.isArray(n)) notes = n; else { notes = seed(); save(); }
+  }
+  function save() { if (!store.set(K, JSON.stringify(notes))) toast('Could not save. Browser storage is blocked or full.'); }
+  function byId(id) { for (var i = 0; i < notes.length; i++) if (notes[i].id === id) return notes[i]; return null; }
+
+  function visible() {
+    var q = S.q.trim().toLowerCase();
+    var r = notes.filter(function (n) {
+      if (S.subject !== 'All' && n.subject !== S.subject) return false;
+      if (S.tab === 'saved' && !n.saved) return false;
+      if (S.tab === 'mine' && !n.mine) return false;
+      return !q || [n.title, n.subject, n.author, n.desc, n.body].join(' ').toLowerCase().indexOf(q) > -1;
+    });
+    r.sort(S.sort === 'top'
+      ? function (a, b) { return b.likes - a.likes || b.date.localeCompare(a.date); }
+      : function (a, b) { return b.date.localeCompare(a.date); });
+    return r;
+  }
+
+  function render() {
+    var subs = []; notes.forEach(function (n) { if (subs.indexOf(n.subject) < 0) subs.push(n.subject); });
+    subs.sort();
+    if (S.subject !== 'All' && subs.indexOf(S.subject) < 0) S.subject = 'All';
+    $('#chips').innerHTML = ['All'].concat(subs).map(function (s) {
+      return '<button type="button" class="chip" data-subj="' + esc(s) + '" aria-pressed="' + (s === S.subject) + '">' + esc(s) + '</button>';
+    }).join('');
+    $('#subjList').innerHTML = subs.map(function (s) { return '<option value="' + esc(s) + '">'; }).join('');
+    document.querySelectorAll('.tabs button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.tab === S.tab); });
+
+    var list = visible();
+    $('#count').textContent = list.length + (list.length === 1 ? ' note' : ' notes') + ' of ' + notes.length;
+    if (!list.length) {
+      var msg = S.tab === 'saved' ? 'You have not saved any notes yet. Tap Save on a note to keep it here.'
+        : S.tab === 'mine' ? 'You have not shared a note yet. Press Share a note to publish your first one.'
+        : 'No notes match your search. Try another word, or share this topic yourself.';
+      $('#grid').innerHTML = '<div class="empty">' + msg + '</div>';
+      return;
+    }
+    $('#grid').innerHTML = list.map(function (n) {
+      return '<article class="sheet" data-id="' + esc(n.id) + '" tabindex="0" style="--h:' + hue(n.subject) + '">' +
+        '<span class="tag">' + esc(n.subject) + '</span>' +
+        '<h3>' + esc(n.title) + '</h3>' +
+        '<p class="desc">' + esc(n.desc || n.body.slice(0, 110)) + '</p>' +
+        '<div class="by">by ' + esc(n.author) + ', ' + fmt(n.date) + '</div>' +
+        '<div class="acts">' +
+        '<button type="button" data-act="like" class="' + (n.liked ? 'on' : '') + '" aria-pressed="' + n.liked + '">Like ' + n.likes + '</button>' +
+        '<button type="button" data-act="save" class="' + (n.saved ? 'on' : '') + '" aria-pressed="' + n.saved + '">' + (n.saved ? 'Saved' : 'Save') + '</button>' +
+        '</div></article>';
+    }).join('');
+  }
+
+  function toggle(n, what) {
+    if (what === 'like') { n.liked = !n.liked; n.likes += n.liked ? 1 : -1; }
+    else { n.saved = !n.saved; toast(n.saved ? 'Saved to your list' : 'Removed from saved'); }
+    save(); render();
+  }
+
+  function openView(id) {
+    var n = byId(id); if (!n) return;
+    var d = $('#viewD'), L = safeLink(n.link);
+    d.dataset.id = id;
+    d.innerHTML =
+      '<div class="dhead"><span class="tag" style="--h:' + hue(n.subject) + '">' + esc(n.subject) + '</span>' +
+      '<h2 id="vt">' + esc(n.title) + '</h2><div class="by">by ' + esc(n.author) + ', ' + fmt(n.date) + '</div></div>' +
+      '<div class="dbody"><div class="body">' + esc(n.body) + '</div>' +
+      (L ? '<p><a href="' + esc(L) + '" target="_blank" rel="noopener noreferrer">Open attached link</a></p>' : '') + '</div>' +
+      '<div class="dfoot">' +
+      '<button type="button" data-act="like" class="' + (n.liked ? 'on' : '') + '">Like ' + n.likes + '</button>' +
+      '<button type="button" data-act="save" class="' + (n.saved ? 'on' : '') + '">' + (n.saved ? 'Saved' : 'Save') + '</button>' +
+      '<button type="button" data-act="download">Download</button>' +
+      '<button type="button" data-act="copy">Copy text</button>' +
+      (n.mine ? '<button type="button" class="del" data-act="delete">Delete</button>' : '') +
+      '<span class="sp"></span><button type="button" data-act="close">Close</button></div>';
+    if (!d.open) d.showModal();
+  }
+
+  function asText(n) { return n.title + '\nSubject: ' + n.subject + '\nBy: ' + n.author + '\n\n' + n.body + (safeLink(n.link) ? '\n\nLink: ' + n.link : ''); }
+  function download(name, text, type) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: type }));
+    a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  }
+
+  $('#viewD').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]'); if (!b) return;
+    var d = $('#viewD'), n = byId(d.dataset.id), act = b.dataset.act; if (!n) return;
+    if (act === 'close') d.close();
+    else if (act === 'like' || act === 'save') { toggle(n, act); openView(n.id); }
+    else if (act === 'download') download(n.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase() + '.txt', asText(n), 'text/plain');
+    else if (act === 'copy') {
+      try { navigator.clipboard.writeText(asText(n)).then(function () { toast('Copied'); }, function () { toast('Copy blocked by the browser'); }); }
+      catch (err) { toast('Copy blocked by the browser'); }
+    } else if (act === 'delete' && confirm('Delete this note? This cannot be undone.')) {
+      notes = notes.filter(function (x) { return x.id !== n.id; }); save(); d.close(); render(); toast('Note deleted');
+    }
+  });
+  $('#viewD').addEventListener('click', function (e) { if (e.target === this) this.close(); });
+
+  $('#grid').addEventListener('click', function (e) {
+    var card = e.target.closest('.sheet'); if (!card) return;
+    var b = e.target.closest('[data-act]'), n = byId(card.dataset.id);
+    if (b && n) toggle(n, b.dataset.act); else openView(card.dataset.id);
+  });
+  $('#grid').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && e.target.classList.contains('sheet')) openView(e.target.dataset.id);
+  });
+  $('#chips').addEventListener('click', function (e) {
+    var b = e.target.closest('.chip'); if (b) { S.subject = b.dataset.subj; render(); }
+  });
+  document.querySelector('.tabs').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (b) { S.tab = b.dataset.tab; render(); }
+  });
+  $('#q').addEventListener('input', function (e) { S.q = e.target.value; render(); });
+  $('#sort').addEventListener('change', function (e) { S.sort = e.target.value; render(); });
+
+  // Add a note
+  $('#add').addEventListener('click', function () {
+    $('#err').textContent = ''; $('#fAuthor').value = store.get(UK) || '';
+    $('#addD').showModal(); $('#fTitle').focus();
+  });
+  $('#cancel').addEventListener('click', function () { $('#addD').close(); });
+  $('#post').addEventListener('click', function () {
+    var t = $('#fTitle').value.trim(), s = $('#fSubject').value.trim(), a = $('#fAuthor').value.trim(),
+        b = $('#fBody').value.trim(), l = $('#fLink').value.trim(), err = $('#err');
+    if (!t || !s || !b) { err.textContent = 'Add a title, a subject and your notes before publishing.'; return; }
+    if (l && !safeLink(l)) { err.textContent = 'The link must start with http:// or https://'; return; }
+    store.set(UK, a);
+    notes.unshift({ id: 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), title: t, subject: s, author: a || 'Anonymous',
+      desc: $('#fDesc').value.trim(), body: b, link: l, date: new Date().toISOString(), likes: 0, liked: false, saved: false, mine: true });
+    save();
+    ['#fTitle', '#fSubject', '#fDesc', '#fBody', '#fLink'].forEach(function (id) { $(id).value = ''; });
+    S.subject = 'All'; S.tab = 'all'; S.q = ''; $('#q').value = '';
+    $('#addD').close(); render(); toast('Note published');
+  });
+
+  // Share between people: export and import a file
+  $('#export').addEventListener('click', function () {
+    var out = notes.map(function (n) { return { id: n.id, title: n.title, subject: n.subject, author: n.author, desc: n.desc, body: n.body, link: n.link, date: n.date, likes: n.likes }; });
+    download('noteshare-notes.json', JSON.stringify(out, null, 2), 'application/json'); toast('Notes exported');
+  });
+  $('#import').addEventListener('click', function () { $('#file').click(); });
+  $('#file').addEventListener('change', function (e) {
+    var f = e.target.files[0]; if (!f) return;
+    var r = new FileReader();
+    r.onload = function () {
+      try {
+        var arr = JSON.parse(r.result), added = 0;
+        if (!Array.isArray(arr)) throw new Error('format');
+        arr.forEach(function (x) {
+          if (!x || typeof x.title !== 'string' || typeof x.subject !== 'string' || typeof x.body !== 'string' || byId(String(x.id))) return;
+          notes.push({ id: String(x.id || 'i' + Math.random().toString(36).slice(2)), title: x.title.slice(0, 90), subject: x.subject.slice(0, 40),
+            author: String(x.author || 'Anonymous').slice(0, 40), desc: String(x.desc || '').slice(0, 140), body: x.body.slice(0, 8000),
+            link: safeLink(String(x.link || '')), date: isNaN(new Date(x.date)) ? new Date().toISOString() : String(x.date),
+            likes: Math.max(0, Number(x.likes) || 0), liked: false, saved: false, mine: false });
+          added++;
+        });
+        save(); render(); toast(added ? added + ' new notes imported' : 'No new notes found in that file');
+      } catch (err) { toast('That file is not a NoteShare export'); }
+      e.target.value = '';
+    };
+    r.readAsText(f);
+  });
+
+  // Theme
+  function applyTheme(t) { document.documentElement.dataset.theme = t; $('#theme').textContent = t === 'dark' ? 'Light mode' : 'Dark mode'; }
+  applyTheme(store.get(TK) || (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+  $('#theme').addEventListener('click', function () {
+    var t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; applyTheme(t); store.set(TK, t);
+  });
+
+  load(); render();
+})();
+</script>
+</body>
+</html>
